@@ -1,0 +1,8 @@
+discord-components==0.0.0.1
+discord.py==2.4.0
+discord-py-interactions==5.13.2
+discord-typings==0.9.0
+pillow==10.4.0
+emoji==2.14.0
+requests==2.31.0
+flask==3.0.3
