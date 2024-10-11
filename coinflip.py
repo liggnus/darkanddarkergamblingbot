@@ -6,6 +6,13 @@ import json
 from PIL import Image
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load the environment variables from .env file
+load_dotenv()
+
+# Load the token from environment variable
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 # Load currency data from file
 def load_currency():
@@ -58,8 +65,8 @@ def save_daily_claims():
 # Initialize the last claim dictionary from file
 last_daily_claim = load_daily_claims()
 
-# Set up the bot with interactions.py
-bot = interactions.Client(token='MTI4ODM4NDUwMzc2ODY3ODQ3Mg.GzLSkw.TpPXGxY8xf-I7BMlkcHTroutl_QKp0dLJavyxM')
+# Initialize the bot
+bot = interactions.Client(token=TOKEN)
 
 # Event for when the bot is ready
 @bot.event
