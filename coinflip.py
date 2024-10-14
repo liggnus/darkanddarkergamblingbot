@@ -411,6 +411,14 @@ def calculate_hand(hand):
 async def blackjack(ctx: SlashContext, bet: int):
     user_id = str(ctx.author.id)
 
+    # Define the maximum bet
+    max_bet = 10000
+
+    # Ensure the bet does not exceed the maximum bet
+    if bet > max_bet:
+        await ctx.send(f"{ctx.author.username}, the maximum bet is {max_bet} currency. Please place a lower bet.")
+        return
+    
     # Ensure user has enough currency to bet
     if user_id not in currency or currency[user_id] < bet:
         await ctx.send(f"{ctx.author.username}, you don't have enough currency to make that bet!")
@@ -859,6 +867,99 @@ async def process_outcome(ctx, user_id, player_total, dealer_total, hand_number=
         await ctx.send(f"{hand_label} draws! You get your bet of {bet} currency back. Your new balance is {new_balance}.")
 
     save_currency()
+
+
+
+
+
+@interactions.slash_command(
+    name="mystery_box",
+    description="Open a Lions Head Chest for a chance to win valuable items",
+    scopes=[1288166371477160057]  # Replace with your guild ID
+)
+async def mystery_box(ctx: SlashContext):
+    user_id = str(ctx.author.id)
+
+    # Define the price for the Lions Head Chest
+    chest_price = 350  # Set to 350 currency
+
+    # Define the prize pool with values
+    prize_pool = [
+        ('Old Cloth', 1),               # 60% chance
+        ('Gold Band', 49),              # 12% chance
+        ('Goblet', 72),                 # 10% chance
+        ('Blue Sapphire', 63),          # 8% chance
+        ('Diamond', 68),                # 5% chance
+        ('Emerald', 63),                # 5% chance
+        ('Ruby', 63),                   # 5% chance
+        ('Spider Silk', 950),           # 2% chance
+        ('Troll Pelt', 4500),           # 0.6% chance
+        ('Gold Coin Bag', 7000),        # 0.4% chance
+        ('Golden Key', 8800),           # 0.2% chance
+        ('Frozen Key', 35200),          # 0.1% chance
+        ('Skull Key', 61600)            # 0.1% chance
+    ]
+
+    prize_weights = [
+        60,   # Old Cloth
+        12,   # Gold Band
+        10,   # Goblet
+        8,    # Blue Sapphire
+        5,    # Diamond
+        5,    # Emerald
+        5,    # Ruby
+        2,    # Spider Silk
+        0.6,  # Troll Pelt
+        0.4,  # Gold Coin Bag
+        0.2,  # Golden Key
+        0.1,  # Frozen Key
+        0.1   # Skull Key
+    ]
+
+    # Check if the user has enough currency
+    if user_id not in currency or currency[user_id] < chest_price:
+        await ctx.send(f"{ctx.author.username}, you don't have enough currency to open the Lions Head Chest!")
+        return
+
+    # Deduct the cost of the chest
+    currency[user_id] -= chest_price
+    save_currency()
+
+    # Unbox a prize (weighted random selection)
+    def weighted_choice(choices, weights):
+        total = sum(weights)
+        r = random.uniform(0, total)
+        upto = 0
+        for i, weight in enumerate(weights):
+            if upto + weight >= r:
+                return choices[i]
+            upto += weight
+
+    # Unbox the prize and get the prize name and value
+    prize_name, prize_value = weighted_choice(prize_pool, prize_weights)
+
+    # Credit the user with the prize value
+    currency[user_id] += prize_value
+    save_currency()
+
+    # Send a message with the unboxed prize
+    await ctx.send(f"**{ctx.author.username}** opens the Lions Head Chest...\nA mystical glow fills the room...\n**You have unboxed: {prize_name}!**\nYou have been credited {prize_value} currency.")
+
+    # Optionally, track the total wagered in the Lions Head Chest
+    if user_id not in wager_data:
+        wager_data[user_id] = 0
+    wager_data[user_id] += chest_price
+    save_total_wagers(wager_data)
+
+
+
+
+
+
+
+
+
+
 
 
 
