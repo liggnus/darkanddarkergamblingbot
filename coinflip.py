@@ -872,58 +872,83 @@ async def process_outcome(ctx, user_id, player_total, dealer_total, hand_number=
 
 
 
+import asyncio
+
+# Dictionary to map prizes to their corresponding image paths
+prize_images = {
+    "Old Cloth": "old_cloth.png",
+    "Spider Silk": "spider_silk.png",
+    "Troll Pelt": "troll_pelt.png",
+    "Gold Coin Bag": "gold_coin_bag.png",
+    "Golden Key": "golden_key.png",
+    "Frozen Key": "frozen_key.png",
+    "Skull Key": "skull_key.png"
+}
+
 @interactions.slash_command(
     name="mystery_box",
-    description="Open a Lions Head Chest for a chance to win valuable items",
+    description="Open a Marvelous Chest for a chance to win valuable items",
     scopes=[1288166371477160057]  # Replace with your guild ID
 )
 async def mystery_box(ctx: SlashContext):
     user_id = str(ctx.author.id)
-
-    # Define the price for the Lions Head Chest
-    chest_price = 350  # Set to 350 currency
-
-    # Define the prize pool with values
-    prize_pool = [
-        ('Old Cloth', 1),               # 60% chance
-        ('Gold Band', 49),              # 12% chance
-        ('Goblet', 72),                 # 10% chance
-        ('Blue Sapphire', 63),          # 8% chance
-        ('Diamond', 68),                # 5% chance
-        ('Emerald', 63),                # 5% chance
-        ('Ruby', 63),                   # 5% chance
-        ('Spider Silk', 950),           # 2% chance
-        ('Troll Pelt', 4500),           # 0.6% chance
-        ('Gold Coin Bag', 7000),        # 0.4% chance
-        ('Golden Key', 8800),           # 0.2% chance
-        ('Frozen Key', 35200),          # 0.1% chance
-        ('Skull Key', 61600)            # 0.1% chance
-    ]
-
-    prize_weights = [
-        60,   # Old Cloth
-        12,   # Gold Band
-        10,   # Goblet
-        8,    # Blue Sapphire
-        5,    # Diamond
-        5,    # Emerald
-        5,    # Ruby
-        2,    # Spider Silk
-        0.6,  # Troll Pelt
-        0.4,  # Gold Coin Bag
-        0.2,  # Golden Key
-        0.1,  # Frozen Key
-        0.1   # Skull Key
-    ]
+    chest_price = 5000  # Set to 5000 currency
 
     # Check if the user has enough currency
     if user_id not in currency or currency[user_id] < chest_price:
-        await ctx.send(f"{ctx.author.username}, you don't have enough currency to open the Lions Head Chest!")
+        await ctx.send(f"{ctx.author.username}, you don't have enough currency to open the Marvelous Chest!")
+        return
+
+    # Send a confirmation message asking if the player wants to proceed
+    await ctx.send(f"The Marvelous Chest costs {chest_price} currency. Do you want to proceed?", components=[
+        interactions.Button(style=interactions.ButtonStyle.PRIMARY, label="Confirm", custom_id="confirm_purchase"),
+        interactions.Button(style=interactions.ButtonStyle.DANGER, label="Cancel", custom_id="cancel_purchase")
+    ])
+
+# Listener for the button click to confirm the purchase
+@interactions.component_callback("confirm_purchase")
+async def confirm_purchase(ctx: interactions.ComponentContext):
+    user_id = str(ctx.author.id)
+    chest_price = 5000  # Set to 5000 currency
+
+    # Check again if the user has enough currency (in case it changed since the confirmation)
+    if user_id not in currency or currency[user_id] < chest_price:
+        await ctx.send(f"{ctx.author.username}, you no longer have enough currency to open the Marvelous Chest!")
         return
 
     # Deduct the cost of the chest
     currency[user_id] -= chest_price
     save_currency()
+
+    # Display the Marvelous Chest image to start the unboxing
+    chest_image = "/mnt/data/marvelous_chest.png"
+    await ctx.send(f"**{ctx.author.username}** is opening the Marvelous Chest...", file=interactions.File(chest_image))
+
+    # Add suspense with delays
+    await asyncio.sleep(2)  # Delay before next message
+    await ctx.send(f"The chest slowly creaks open...")
+    await asyncio.sleep(2)  # Additional delay for suspense
+
+    # Define the prize pool (without image paths, since we're using the dictionary)
+    prize_pool = [
+        ('Old Cloth', 1),                     # 60% chance
+        ('Spider Silk', 950),                 # 20% chance
+        ('Troll Pelt', 4500),                 # 10% chance
+        ('Gold Coin Bag', 7000),              # 5% chance
+        ('Golden Key', 8800),                 # 3% chance
+        ('Frozen Key', 35200),                # 1.5% chance
+        ('Skull Key', 61600)                  # 0.5% chance
+    ]
+
+    prize_weights = [
+        60,   # Old Cloth
+        20,   # Spider Silk
+        10,   # Troll Pelt
+        5,    # Gold Coin Bag
+        3,    # Golden Key
+        1.5,  # Frozen Key
+        0.5   # Skull Key
+    ]
 
     # Unbox a prize (weighted random selection)
     def weighted_choice(choices, weights):
@@ -942,14 +967,30 @@ async def mystery_box(ctx: SlashContext):
     currency[user_id] += prize_value
     save_currency()
 
-    # Send a message with the unboxed prize
-    await ctx.send(f"**{ctx.author.username}** opens the Lions Head Chest...\nA mystical glow fills the room...\n**You have unboxed: {prize_name}!**\nYou have been credited {prize_value} currency.")
+    # Final suspense before revealing the prize
+    await asyncio.sleep(3)  # Final delay
+    await ctx.send(f"**{ctx.author.username}** the chest is opening...")
 
-    # Optionally, track the total wagered in the Lions Head Chest
+    # Retrieve the image for the prize from the dictionary
+    prize_image = prize_images.get(prize_name)
+
+    # Send the prize message with the prize image
+    if prize_image:
+        await ctx.send(f"**{ctx.author.username}** opens the Marvelous Chest...\nA mystical glow fills the room...\n**You have unboxed: {prize_name}!**\nYou have been credited {prize_value} currency.", file=interactions.File(prize_image))
+    else:
+        await ctx.send(f"**{ctx.author.username}** opens the Marvelous Chest...\nA mystical glow fills the room...\n**You have unboxed: {prize_name}!**\nYou have been credited {prize_value} currency.")
+
+    # Optionally, track the total wagered in the Marvelous Chest
     if user_id not in wager_data:
         wager_data[user_id] = 0
     wager_data[user_id] += chest_price
     save_total_wagers(wager_data)
+
+# Listener for the button click to cancel the purchase
+@interactions.component_callback("cancel_purchase")
+async def cancel_purchase(ctx: interactions.ComponentContext):
+    await ctx.send("Purchase canceled.")
+
 
 
 
